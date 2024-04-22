@@ -63,28 +63,59 @@ class Vehicle(pygame.sprite.Sprite):
         self.all_vehicles = all_vehicles  # Reference to all vehicles
 
     def update(self):
-        # Calculate stopping distance from the traffic light or the nearest vehicle ahead
+
         min_distance = float('inf')  # Initialize with a large number
 
-        # Check distance to all other vehicles
+
         for vehicle in self.all_vehicles:
             if vehicle != self and vehicle.rect.x > self.rect.x:
-                # Calculate distance to vehicles ahead on the same lane
+
                 distance = vehicle.rect.x - (self.rect.x + self.rect.width)
                 min_distance = min(min_distance, distance)
 
-        # Check traffic light status and position
+
         light_distance = self.traffic_light.rect.x - (self.rect.x + self.rect.width)
         if not self.traffic_light.is_green_light() and light_distance < 100:
             min_distance = min(min_distance, light_distance - 10)
 
-        # Decision making based on the traffic light and other vehicles
+
         if min_distance < 20:  # Threshold for stopping
             return  # Stop moving if too close to another vehicle or the traffic light
 
         self.rect.x += self.speed
         if self.rect.x > SCREEN_WIDTH:
             self.rect.x = -50  # Reset position after crossing the screen
+
+
+class Button:
+    def __init__(self, x, y, width, height, color, text):
+        self.rect = pygame.Rect(x, y, width, height)
+        self.color = color
+        self.text = text
+
+    def draw(self, screen):
+        # Draw the button rectangle
+        pygame.draw.rect(screen, self.color, self.rect)
+        # Draw the text
+        font = pygame.font.Font(None, 30)
+        text_surf = font.render(self.text, True, BLACK)
+        text_rect = text_surf.get_rect(center=self.rect.center)
+        screen.blit(text_surf, text_rect)
+
+    def is_clicked(self, pos):
+        return self.rect.collidepoint(pos)
+
+
+
+# Create buttons directly without adding to a sprite group
+add_button = Button(50, 50, 100, 50, GREEN, 'Add')
+remove_button = Button(200, 50, 100, 50, RED, 'Remove')
+
+# Store buttons in a list
+buttons = [add_button, remove_button]
+
+
+
 
 
 # Create groups
@@ -109,12 +140,47 @@ for i in range(5):
     all_sprites.add(vehicle)
 
 
-# Main game loop
+# # Main game loop
+# running = True
+# while running:
+#     for event in pygame.event.get():
+#         if event.type == pygame.QUIT:
+#             running = False
+
+#     # Update all sprites
+#     all_sprites.update()
+
+#     # Draw everything
+#     screen.fill(BLACK)
+#     pygame.draw.rect(screen, ROAD_COLOR, (0, ROAD_BOTTOM, SCREEN_WIDTH, ROAD_TOP - ROAD_BOTTOM))  # Draw the road
+#     all_sprites.draw(screen)
+
+#     # Update display and maintain framerate
+#     pygame.display.flip()
+#     clock.tick(FPS)
+
+
+
 running = True
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            pos = pygame.mouse.get_pos()
+            for button in buttons:
+                if button.is_clicked(pos):
+                    if button == add_button:
+                        # Add a new vehicle
+                        new_vehicle = Vehicle(len(all_vehicles) * 140 % SCREEN_WIDTH, ROAD_BOTTOM + 10, 40, 20, WHITE, 5, traffic_light, all_vehicles)
+                        vehicles.add(new_vehicle)
+                        all_vehicles.append(new_vehicle)
+                        all_sprites.add(new_vehicle)
+                    elif button == remove_button and all_vehicles:
+                        # Remove the last vehicle
+                        vehicle_to_remove = all_vehicles.pop()
+                        vehicles.remove(vehicle_to_remove)
+                        all_sprites.remove(vehicle_to_remove)
 
     # Update all sprites
     all_sprites.update()
@@ -123,6 +189,9 @@ while running:
     screen.fill(BLACK)
     pygame.draw.rect(screen, ROAD_COLOR, (0, ROAD_BOTTOM, SCREEN_WIDTH, ROAD_TOP - ROAD_BOTTOM))  # Draw the road
     all_sprites.draw(screen)
+    # Draw buttons
+    for button in buttons:
+        button.draw(screen)
 
     # Update display and maintain framerate
     pygame.display.flip()
@@ -130,3 +199,6 @@ while running:
 
 pygame.quit()
 sys.exit()
+
+
+
